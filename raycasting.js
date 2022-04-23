@@ -216,6 +216,7 @@ function init() {
         for (let column = 0; column < width; ++column) {
             const delta = -(column / width - 0.5) * FOV * Math.PI / 180;
             const hit = castRay(x, y, angle - delta);
+            hit.dist = hit.dist * Math.cos(delta);  // fish-eye correction
             const { wallX, wallY, tile } = hit;
             drawMapMarker(wallX, wallY, 'cyan');
             drawMapLine(x, y, wallX, wallY, 'yellow');
