@@ -198,6 +198,11 @@ function init() {
         // 4 for RGBA
         let OFS = (tile - 1) * 64 * 64 * 2 * 4;
 
+        // different shade for east/west vs north/south
+        if (wallY === Math.floor(wallY)) {
+            OFS += (64 * 4);
+        }
+
         const tx = Math.floor(64 * offset);
 
         for (let y = 0; y < h; ++y) {
