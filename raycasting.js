@@ -178,10 +178,39 @@ function init() {
         return (WE.dist < NS.dist) ? WE : NS;
     }
 
+    function drawColumn(column, hit) {
+        const view = document.getElementById('view');
+        const ctx = view.getContext('2d');
+        const { width, height } = view;
+
+        const { dist, tile } = hit;
+        const h = Math.round(width / dist);
+        const center = height / 2;
+        const start = Math.floor(center - h / 2);
+        const end = start + h;
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = tileColor(tile);
+        ctx.beginPath();
+        ctx.moveTo(column, start);
+        ctx.lineTo(column, end);
+        ctx.stroke();
+    }
+
     const FOV = 45; // degrees
 
     function updateView() {
-        const width = 600;
+        const view = document.getElementById('view');
+        const ctx = view.getContext('2d');
+        const { width, height } = view;
+
+        // ceiling
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, width, height / 2);
+
+        // floor
+        ctx.fillStyle = '#666';
+        ctx.fillRect(0, height / 2, width, height);
 
         const { x, y, angle } = player;
         for (let column = 0; column < width; ++column) {
@@ -190,6 +219,7 @@ function init() {
             const { wallX, wallY, tile } = hit;
             drawMapMarker(wallX, wallY, 'cyan');
             drawMapLine(x, y, wallX, wallY, 'yellow');
+            drawColumn(column, hit);
         }
     }
 
