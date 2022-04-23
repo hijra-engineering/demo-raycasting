@@ -107,11 +107,6 @@ function init() {
 
         const { x, y, angle } = player;
         drawMapMarker(x, y);
-
-        const len = 10;
-        const dx = Math.cos(angle) * len;
-        const dy = Math.sin(angle) * len;
-        drawMapLine(x, y, x + dx, y + dy, 'yellow');
     }
 
 
@@ -183,11 +178,19 @@ function init() {
         return (WE.dist < NS.dist) ? WE : NS;
     }
 
+    const FOV = 45; // degrees
+
     function updateView() {
+        const width = 600;
+
         const { x, y, angle } = player;
-        const hit = castRay(x, y, angle);
-        const { wallX, wallY, tile } = hit;
-        drawMapMarker(wallX, wallY, 'cyan');
+        for (let column = 0; column < width; ++column) {
+            const delta = -(column / width - 0.5) * FOV * Math.PI / 180;
+            const hit = castRay(x, y, angle - delta);
+            const { wallX, wallY, tile } = hit;
+            drawMapMarker(wallX, wallY, 'cyan');
+            drawMapLine(x, y, wallX, wallY, 'yellow');
+        }
     }
 
     function render() {
