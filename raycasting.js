@@ -108,14 +108,91 @@ function init() {
         const { x, y, angle } = player;
         drawMapMarker(x, y);
 
-        const len = 1;
+        const len = 10;
         const dx = Math.cos(angle) * len;
         const dy = Math.sin(angle) * len;
         drawMapLine(x, y, x + dx, y + dy, 'yellow');
     }
 
+
+    function distance(x1, x2, y1, y2) {
+        const dx = x1 - x2;
+        const dy = y1 - y2;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function castEast(x, y, angle) {
+        const tanAngle = Math.tan(angle);
+        let wallX = Math.ceil(x);
+        let wallY = y + tanAngle * (wallX - x);
+        let tile = tileAt(wallX, wallY);
+        while (tile === 0) {
+            wallX += 1;
+            wallY += tanAngle;
+            tile = tileAt(wallX, wallY);
+        }
+        const dist = distance(x, wallX, y, wallY);
+        return { wallX, wallY, dist, tile };
+    }
+
+    function castWest(x, y, angle) {
+        const tanAngle = Math.tan(angle);
+        let wallX = Math.floor(x);
+        let wallY = y + tanAngle * (wallX - x);
+        let tile = tileAt(wallX - 1, wallY);
+        while (tile === 0) {
+            wallX -= 1;
+            wallY -= tanAngle;
+            tile = tileAt(wallX - 1, wallY);
+        }
+        const dist = distance(x, wallX, y, wallY);
+        return { wallX, wallY, dist, tile };
+    }
+
+    function castSouth(x, y, angle) {
+        const cotAngle = 1 / Math.tan(angle)
+        let wallY = Math.ceil(y);
+        let wallX = x + cotAngle * (wallY - y);
+        let tile = tileAt(wallX, wallY);
+        while (tile === 0) {
+            wallY += 1;
+            wallX += cotAngle;
+            tile = tileAt(wallX, wallY);
+        }
+        const dist = distance(x, wallX, y, wallY);
+        return { wallX, wallY, dist, tile };
+    }
+
+    function castNorth(x, y, angle) {
+        const cotAngle = 1 / Math.tan(angle)
+        let wallY = Math.floor(y);
+        let wallX = x + cotAngle * (wallY - y);
+        let tile = tileAt(wallX, wallY - 1);
+        while (tile === 0) {
+            wallY -= 1;
+            wallX -= cotAngle;
+            tile = tileAt(wallX, wallY - 1);
+        }
+        const dist = distance(x, wallX, y, wallY);
+        return { wallX, wallY, dist, tile };
+    }
+
+    function castRay(x, y, angle) {
+        const WE = Math.cos(angle) > 0 ? castEast(x, y, angle) : castWest(x, y, angle);
+        const NS = Math.sin(angle) > 0 ? castSouth(x, y, angle) : castNorth(x, y, angle);
+        return (WE.dist < NS.dist) ? WE : NS;
+    }
+
+    function updateView() {
+        const { x, y, angle } = player;
+        const hit = castRay(x, y, angle);
+        const { wallX, wallY, tile } = hit;
+        drawMapMarker(wallX, wallY, 'cyan');
+    }
+
     function render() {
         updateMap();
+        updateView();
     }
 
     render();
