@@ -127,7 +127,8 @@ function init() {
             tile = tileAt(wallX, wallY);
         }
         const dist = distance(x, wallX, y, wallY);
-        return { wallX, wallY, dist, tile };
+        const offset = Math.ceil(wallY) - wallY;
+        return { wallX, wallY, offset, dist, tile };
     }
 
     function castWest(x, y, angle) {
@@ -141,7 +142,8 @@ function init() {
             tile = tileAt(wallX - 1, wallY);
         }
         const dist = distance(x, wallX, y, wallY);
-        return { wallX, wallY, dist, tile };
+        const offset = wallY - Math.floor(wallY);
+        return { wallX, wallY, offset, dist, tile };
     }
 
     function castSouth(x, y, angle) {
@@ -155,7 +157,8 @@ function init() {
             tile = tileAt(wallX, wallY);
         }
         const dist = distance(x, wallX, y, wallY);
-        return { wallX, wallY, dist, tile };
+        const offset = Math.ceil(wallX) - wallX;
+        return { wallX, wallY, offset, dist, tile };
     }
 
     function castNorth(x, y, angle) {
@@ -169,7 +172,8 @@ function init() {
             tile = tileAt(wallX, wallY - 1);
         }
         const dist = distance(x, wallX, y, wallY);
-        return { wallX, wallY, dist, tile };
+        const offset = wallX - Math.floor(wallX);
+        return { wallX, wallY, offset, dist, tile };
     }
 
     function castRay(x, y, angle) {
@@ -178,23 +182,40 @@ function init() {
         return (WE.dist < NS.dist) ? WE : NS;
     }
 
-    function drawColumn(column, hit) {
+    function drawColumn(column, hit, pixels) {
+        if (!texture) return;
+
         const view = document.getElementById('view');
-        const ctx = view.getContext('2d');
         const { width, height } = view;
 
-        const { dist, tile } = hit;
+        const { offset, wallY, dist, tile } = hit;
         const h = Math.round(width / dist);
         const center = height / 2;
         const start = Math.floor(center - h / 2);
-        const end = start + h;
 
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = tileColor(tile);
-        ctx.beginPath();
-        ctx.moveTo(column, start);
-        ctx.lineTo(column, end);
-        ctx.stroke();
+        // 64x64 is each texture size
+        // 2 for light and dark version
+        // 4 for RGBA
+        let OFS = (tile - 1) * 64 * 64 * 2 * 4;
+
+        const tx = Math.floor(64 * offset);
+
+        for (let y = 0; y < h; ++y) {
+            const ty = Math.floor(64 * y / h);
+            const tofs = OFS + (ty + tx * 128) * 4;
+            const r = texture[tofs];
+            const g = texture[tofs + 1];
+            const b = texture[tofs + 2];
+
+            const vx = column;
+            const vy = start + y;
+            const vofs = (vx + vy * width) * 4;
+
+            pixels[vofs] = r;
+            pixels[vofs + 1] = g;
+            pixels[vofs + 2] = b;
+            pixels[vofs + 3] = 255;
+        }
     }
 
     const FOV = 45; // degrees
@@ -202,6 +223,7 @@ function init() {
     function updateView() {
         const view = document.getElementById('view');
         const ctx = view.getContext('2d');
+
         const { width, height } = view;
 
         // ceiling
@@ -212,6 +234,9 @@ function init() {
         ctx.fillStyle = '#666';
         ctx.fillRect(0, height / 2, width, height);
 
+        const buffer = ctx.getImageData(0, 0, width, height);
+        const pixels = buffer.data;
+
         const { x, y, angle } = player;
         for (let column = 0; column < width; ++column) {
             const delta = -(column / width - 0.5) * FOV * Math.PI / 180;
@@ -220,8 +245,9 @@ function init() {
             const { wallX, wallY, tile } = hit;
             drawMapMarker(wallX, wallY, 'cyan');
             drawMapLine(x, y, wallX, wallY, 'yellow');
-            drawColumn(column, hit);
+            drawColumn(column, hit, pixels);
         }
+        ctx.putImageData(buffer, 0, 0);
     }
 
     function render() {
@@ -229,5 +255,22 @@ function init() {
         updateView();
     }
 
-    render();
+    let texture = null;
+
+    function loadTextures() {
+        const img = new Image();
+        img.src = "./assets/textures.png";
+        img.onload = function () {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const pixel = ctx.getImageData(0, 0, img.width, img.height);
+            texture = pixel.data;
+            render();
+        }
+    }
+
+    loadTextures();
 }
