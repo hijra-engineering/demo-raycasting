@@ -54,17 +54,56 @@ function init() {
         ctx.stroke();
     }
 
-    function clearMap() {
-        const map = document.getElementById('map');
-        const ctx = map.getContext('2d');
-        const { width, height } = map;
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, width, height);
+    const MAP = [
+        1, 1, 1, 1, 6, 1, 1, 1,
+        1, 0, 0, 1, 0, 0, 0, 7,
+        1, 1, 0, 1, 0, 1, 1, 1,
+        6, 0, 0, 0, 0, 0, 0, 7,
+        1, 8, 8, 0, 0, 0, 1, 1,
+        2, 2, 0, 0, 8, 8, 8, 1,
+        3, 0, 0, 0, 0, 0, 0, 5,
+        2, 2, 2, 2, 7, 4, 4, 4,
+    ];
 
+    function tileAt(x, y) {
+        const p = Math.floor(x);
+        const q = Math.floor(y);
+        if (x < 0 || y < 0 || x > 8 || y > 8) {
+            return 1;
+        }
+        return MAP[p + q * 8];
     }
 
-    function render() {
-        clearMap();
+    function tileColor(tile) {
+        return [
+            'white',
+            'blue',
+            'saddlebrown',
+            'olive',
+            'green',
+            'brown',
+            'gray',
+            'chocolate',
+            'lightgray',
+            'gray']
+        [tile];
+    }
+
+
+    function updateMap() {
+        const map = document.getElementById('map');
+        const ctx = map.getContext('2d');
+
+        const { width } = map;
+        const scale = width / 8;
+
+        for (let i = 0; i < 8; ++i) {
+            for (let j = 0; j < 8; ++j) {
+                const tile = tileAt(i, j);
+                ctx.fillStyle = tileColor(tile);
+                ctx.fillRect(i * scale, j * scale, i * scale + scale, j * scale + scale);
+            }
+        }
 
         const { x, y, angle } = player;
         drawMapMarker(x, y);
@@ -73,6 +112,10 @@ function init() {
         const dx = Math.cos(angle) * len;
         const dy = Math.sin(angle) * len;
         drawMapLine(x, y, x + dx, y + dy, 'yellow');
+    }
+
+    function render() {
+        updateMap();
     }
 
     render();
